@@ -1,56 +1,163 @@
-const workouts = [
-  { name: 'Push-ups', description: '3 serie da 15 ripetizioni', video: 'https://youtu.be/bND2SnO2oIY?si=OHd1elBUr6w6DnLO', category: 'muscolare', muscle: 'pettorali', level: 'principiante' },
-  { name: 'Push-ups', description: '4 serie da 20 ripetizioni', video: 'https://youtu.be/bND2SnO2oIY?si=OHd1elBUr6w6DnLO', category: 'muscolare', muscle: 'pettorali', level: 'intermedio' },
-  { name: 'Squats', description: '3 serie da 20 ripetizioni', video: 'https://youtu.be/SVx2k8OZG48?si=1MDeVsJkU_6JxOuB', category: 'muscolare', muscle: 'gambe', level: 'principiante' },
-  { name: 'Plank', description: 'Stai per 1 minuto in posizione di plank', video: 'https://youtu.be/Is-7PPaBcsM?si=u8PieFkoMaCmfMMp', category: 'muscolare', muscle: 'addominali', level: 'principiante' },
-  { name: 'Pull-ups', description: '3 serie da 10 ripetizioni', video: 'https://youtu.be/eGo4IYlbE5g', category: 'muscolare', muscle: 'schiena', level: 'intermedio' },
-  { name: 'Running', description: 'Corri per 30 minuti', video: 'https://youtu.be/1wKbPN3qUhE', category: 'cardio', level: 'principiante' },
-  { name: 'Jumping Jacks', description: '3 serie da 30 ripetizioni', video: 'https://youtu.be/UpH7rm0cYbM', category: 'cardio', level: 'principiante' },
-  // Aggiungi altri esercizi per ogni livello
-  { name: 'Bench Press', description: '3 serie da 10 ripetizioni', video: 'https://youtu.be/SCVCLChPQFY', category: 'muscolare', muscle: 'pettorali', level: 'intermedio' },
-  { name: 'Deadlift', description: '3 serie da 8 ripetizioni', video: 'https://youtu.be/ytGaGIn3SjE', category: 'muscolare', muscle: 'gambe', level: 'avanzato' },
-  // Aggiungi altri esercizi avanzati
-];
+const express = require('express');
+const bodyParser = require('body-parser');
+const TelegramBot = require('node-telegram-bot-api');
+const workoutModule = require('./workout.js');
+const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o';
 
-module.exports = {
-  getRandomWorkout: function(bot, msg, muscle, category, level) {
-    const chatId = msg.chat.id;
+// Crea una nuova istanza del bot Telegram
+const bot = new TelegramBot(token, { polling: true });
 
-    // Filtra gli esercizi per la categoria, il muscolo e il livello specificato
-    const filteredWorkouts = workouts.filter(workout => 
-      workout.category === category && 
-      workout.muscle.toLowerCase() === muscle.toLowerCase() &&
-      workout.level === level
-    );
+// Crea un'app Express
+const app = express();
+app.use(bodyParser.json());
 
-    // Controlla se ci sono esercizi disponibili per il muscolo e livello specificato
-    if (filteredWorkouts.length > 0) {
-      // Seleziona casualmente un esercizio dalla lista filtrata
-      const workout = filteredWorkouts[Math.floor(Math.random() * filteredWorkouts.length)];
+// Definisci una route di base
+app.get('/', (req, res) => {
+  res.send('CoachBot è in esecuzione');
+});
 
-      // Invia il messaggio con l'esercizio selezionato
-      bot.sendMessage(chatId, `Oggi ti consiglio di fare: ${workout.name}\nDescrizione: ${workout.description}\nVideo: ${workout.video}`);
+// Inizia il server su una porta specifica
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+// Mappa per memorizzare le informazioni degli utenti
+const users = {};
+
+// Risposta al comando /start
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
+  users[chatId] = {}; // Inizializza i dati dell'utente
+  bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness,qui seguirai un percorso per la raggiunta dei tuoi obiettivi, devi solo fornirci alcuni dati. Qual è il tuo nome?");
+});
+
+// Risposta ai messaggi dell'utente
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  if (!users[chatId]) {
+    // Ignora i messaggi non pertinenti dopo la registrazione
+    return;
+  }
+
+  if (!users[chatId].name) {
+    users[chatId].name = text;
+    bot.sendMessage(chatId, `Ciao ${text}! Quanti anni hai?`);
+  } else if (!users[chatId].age) {
+    const age = parseInt(text);
+    if (isNaN(age)) {
+      bot.sendMessage(chatId, "Per favore, inserisci un'età valida.");
     } else {
-      // Se non ci sono esercizi disponibili per il muscolo e livello specificato, invia un messaggio di avviso
-      bot.sendMessage(chatId, `Non ci sono esercizi disponibili per allenare il muscolo "${muscle}" al livello "${level}".`);
+      users[chatId].age = age;
+      bot.sendMessage(chatId, `Perfetto! Hai ${age} anni. Quanto pesi (in kg)?`);
     }
-  },
-  getCategoryWorkout: function(bot, msg, category, level) {
-    const chatId = msg.chat.id;
-
-    // Filtra gli esercizi per la categoria e il livello specificato
-    const categoryWorkouts = workouts.filter(workout => workout.category === category && workout.level === level);
-
-    // Controlla se ci sono esercizi disponibili per la categoria e livello specificato
-    if (categoryWorkouts.length > 0) {
-      // Seleziona casualmente un esercizio dalla lista filtrata
-      const workout = categoryWorkouts[Math.floor(Math.random() * categoryWorkouts.length)];
-
-      // Invia il messaggio con l'esercizio selezionato
-      bot.sendMessage(chatId, `Oggi ti consiglio di fare: ${workout.name}\nDescrizione: ${workout.description}\nVideo: ${workout.video}`);
+  } else if (!users[chatId].weight) {
+    const weight = parseFloat(text);
+    if (isNaN(weight)) {
+      bot.sendMessage(chatId, "Per favore, inserisci un peso valido in kg.");
     } else {
-      // Se non ci sono esercizi disponibili per la categoria e livello specificato, invia un messaggio di avviso
-      bot.sendMessage(chatId, `Non ci sono esercizi disponibili per la categoria "${category}" al livello "${level}".`);
+      users[chatId].weight = weight;
+      bot.sendMessage(chatId, `Ottimo! Pesi ${weight} kg. Quanto sei alto (in cm)?`);
+    }
+  } else if (!users[chatId].height) {
+    const height = parseFloat(text);
+    if (isNaN(height)) {
+      bot.sendMessage(chatId, "Per favore, inserisci un'altezza valida in cm.");
+    } else {
+      users[chatId].height = height;
+      const bmi = calculateBMI(users[chatId].weight, users[chatId].height);
+      const advice = getAdvice(bmi);
+      bot.sendMessage(chatId, `Sei alto ${height} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);
+      askForLevel(chatId);
     }
   }
-};
+});
+
+// Funzione per calcolare il BMI
+function calculateBMI(weight, height) {
+  const heightInMeters = height / 100;
+  return weight / (heightInMeters * heightInMeters);
+}
+
+// Funzione per fornire consigli basati sul BMI
+function getAdvice(bmi) {
+  if (bmi < 18.5) {
+    return "Sei sotto peso. Ti consigliamo di seguire un programma per aumentare la massa muscolare ed una dieta ipercalorica.";
+  } else if (bmi < 24.9) {
+    return "Hai un peso normale. Continua così con un mix di allenamenti cardio e di forza.";
+  } else if (bmi < 29.9) {
+    return "Sei in sovrappeso. Ti consigliamo di seguire un programma per dimagrire.";
+  } else {
+    return "Sei obeso. Ti consigliamo di consultare un professionista della salute e seguire un programma per dimagrire.";
+  }
+}
+
+// Funzione per chiedere il livello di fitness
+function askForLevel(chatId) {
+  bot.sendMessage(chatId, "Qual è il tuo livello di fitness?", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Principiante', callback_data: 'level_principiante' }],
+        [{ text: 'Intermedio', callback_data: 'level_intermedio' }],
+        [{ text: 'Avanzato', callback_data: 'level_avanzato' }]
+      ]
+    }
+  });
+}
+
+// Funzione per inviare il menu principale
+function sendMainMenu(chatId, level) {
+  bot.sendMessage(chatId, "Scegli un'opzione:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Allenamento Muscolare', callback_data: `category_muscle_${level}` }],
+        [{ text: 'Allenamento Dimagrimento/Cardio', callback_data: `category_cardio_${level}` }]
+      ]
+    }
+  });
+}
+
+// Gestione dei pulsanti inline
+bot.on('callback_query', (callbackQuery) => {
+  const action = callbackQuery.data;
+  const chatId = callbackQuery.message.chat.id;
+
+  if (action.startsWith('level_')) {
+    const level = action.split('_')[1];
+    users[chatId].level = level;
+    bot.sendMessage(chatId, `Hai selezionato il livello: ${level}`);
+    sendMainMenu(chatId, level);
+  } else if (action.startsWith('category_')) {
+    const parts = action.split('_');
+    const category = parts[1];
+    const level = parts[2];
+
+    if (category === 'muscle') {
+      sendMuscleSelection(chatId, level);
+    } else if (category === 'cardio') {
+      workoutModule.getCategoryWorkout(bot, { chat: { id: chatId } }, 'cardio', level);
+    }
+  } else if (action.startsWith('muscle_')) {
+    const parts = action.split('_');
+    const muscle = parts[1];
+    const level = parts[2];
+    workoutModule.getCategoryWorkout(bot, { chat: { id: chatId } }, muscle, level);
+  }
+});
+
+// Funzione per inviare la selezione del muscolo
+function sendMuscleSelection(chatId, level) {
+  bot.sendMessage(chatId, "Scegli il muscolo che desideri allenare:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Pettorali', callback_data: `muscle_pettorali_${level}` }],
+        [{ text: 'Gambe', callback_data: `muscle_gambe_${level}` }],
+        [{ text: 'Addominali', callback_data: `muscle_addominali_${level}` }],
+        [{ text: 'Schiena', callback_data: `muscle_schiena_${level}` }],
+        [{ text: 'Annulla', callback_data: `cancel_${level}` }]
+      ]
+    }
+  });
+}
