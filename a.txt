@@ -3,8 +3,6 @@ const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 const workoutModule = require('./workout.js');
 
-
-// Sostituisci con il token del tuo bot
 const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o';
 
 // Crea una nuova istanza del bot Telegram
@@ -25,12 +23,107 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+// In-memory user data storage
+const userData = {};
+
 // Risposta al comando /start
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "Benvenuto nel Coach di Fitness! Iniziamo con la tua registrazione.");
+  const chatId = msg.chat.id;
+  if (!userData[chatId]) {
+    userData[chatId] = {};
+    bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Per favore, registrati fornendo il tuo nome.");
+  } else {
+    sendMainMenu(chatId);
+  }
 });
 
-  bot.onText(/\/workout (.+)/, (msg, match) => {
-    const muscle = match[1]; // Ottieni il muscolo specificato dall'utente
-    workoutModule.getRandomWorkout(bot, msg, muscle);
+// Gestione della registrazione utente
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  if (text.startsWith('/')) return; // Ignora i comandi
+
+  if (!userData[chatId].name) {
+    userData[chatId].name = text;
+    bot.sendMessage(chatId, `Grazie, ${text}! Quanti anni hai?`);
+  } else if (!userData[chatId].age) {
+    const age = parseInt(text);
+    if (isNaN(age)) {
+      bot.sendMessage(chatId, "Per favore, inserisci un'età valida.");
+    } else {
+      userData[chatId].age = age;
+      bot.sendMessage(chatId, "Qual è il tuo livello di fitness? (Principiante, Intermedio, Avanzato)");
+    }
+  } else if (!userData[chatId].fitnessLevel) {
+    const fitnessLevels = ['principiante', 'intermedio', 'avanzato'];
+    if (fitnessLevels.includes(text.toLowerCase())) {
+      userData[chatId].fitnessLevel = text.toLowerCase();
+      bot.sendMessage(chatId, `Registrazione completata! Benvenuto, ${userData[chatId].name}.`);
+      sendMainMenu(chatId);
+    } else {
+      bot.sendMessage(chatId, "Per favore, inserisci un livello di fitness valido (Principiante, Intermedio, Avanzato).");
+    }
+  }
+});
+
+// Gestione dei pulsanti inline
+bot.on('callback_query', (callbackQuery) => {
+  const action = callbackQuery.data;
+  const chatId = callbackQuery.message.chat.id;
+
+  switch (action) {
+    case 'muscolare':
+      bot.answerCallbackQuery(callbackQuery.id);
+      sendMuscleSelection(chatId);
+      break;
+    case 'cardio':
+      bot.answerCallbackQuery(callbackQuery.id);
+      workoutModule.getCategoryWorkout(bot, { chat: { id: chatId } }, 'cardio', userData[chatId].fitnessLevel);
+      break;
+    case 'pettorali':
+    case 'gambe':
+    case 'addominali':
+    case 'schiena':
+      bot.answerCallbackQuery(callbackQuery.id);
+      workoutModule.getRandomWorkout(bot, { chat: { id: chatId } }, action, 'muscolare', userData[chatId].fitnessLevel);
+      break;
+    case 'indietro':
+      bot.answerCallbackQuery(callbackQuery.id);
+      sendMainMenu(chatId);
+      break;
+    default:
+      bot.answerCallbackQuery(callbackQuery.id);
+      bot.sendMessage(chatId, "Opzione non valida.");
+      break;
+  }
+});
+
+// Invia il menu principale
+function sendMainMenu(chatId) {
+  bot.sendMessage(chatId, "Scegli un'opzione:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Allenamento Muscolare', callback_data: 'muscolare' }],
+        [{ text: 'Allenamento Dimagrimento/Cardio', callback_data: 'cardio' }]
+      ]
+    }
   });
+}
+
+// Invia la selezione del muscolo
+function sendMuscleSelection(chatId) {
+  bot.sendMessage(chatId, "Scegli il muscolo che desideri allenare:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Pettorali', callback_data: 'pettorali' }],
+        [{ text: 'Gambe', callback_data: 'gambe' }],
+        [{ text: 'Addominali', callback_data: 'addominali' }],
+        [{ text: 'Schiena', callback_data: 'schiena' }],
+        [{ text: 'Indietro', callback_data: 'indietro' }]
+      ]
+    }
+  });
+}
+
+

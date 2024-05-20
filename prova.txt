@@ -1,66 +1,56 @@
-// index.js
-const TelegramBot = require('node-telegram-bot-api');
-const workoutModule = require('./workout.js');
+const workouts = [
+  { name: 'Push-ups', description: '3 serie da 15 ripetizioni', video: 'https://youtu.be/bND2SnO2oIY?si=OHd1elBUr6w6DnLO', category: 'muscolare', muscle: 'pettorali', level: 'principiante' },
+  { name: 'Push-ups', description: '4 serie da 20 ripetizioni', video: 'https://youtu.be/bND2SnO2oIY?si=OHd1elBUr6w6DnLO', category: 'muscolare', muscle: 'pettorali', level: 'intermedio' },
+  { name: 'Squats', description: '3 serie da 20 ripetizioni', video: 'https://youtu.be/SVx2k8OZG48?si=1MDeVsJkU_6JxOuB', category: 'muscolare', muscle: 'gambe', level: 'principiante' },
+  { name: 'Plank', description: 'Stai per 1 minuto in posizione di plank', video: 'https://youtu.be/Is-7PPaBcsM?si=u8PieFkoMaCmfMMp', category: 'muscolare', muscle: 'addominali', level: 'principiante' },
+  { name: 'Pull-ups', description: '3 serie da 10 ripetizioni', video: 'https://youtu.be/eGo4IYlbE5g', category: 'muscolare', muscle: 'schiena', level: 'intermedio' },
+  { name: 'Running', description: 'Corri per 30 minuti', video: 'https://youtu.be/1wKbPN3qUhE', category: 'cardio', level: 'principiante' },
+  { name: 'Jumping Jacks', description: '3 serie da 30 ripetizioni', video: 'https://youtu.be/UpH7rm0cYbM', category: 'cardio', level: 'principiante' },
+  // Aggiungi altri esercizi per ogni livello
+  { name: 'Bench Press', description: '3 serie da 10 ripetizioni', video: 'https://youtu.be/SCVCLChPQFY', category: 'muscolare', muscle: 'pettorali', level: 'intermedio' },
+  { name: 'Deadlift', description: '3 serie da 8 ripetizioni', video: 'https://youtu.be/ytGaGIn3SjE', category: 'muscolare', muscle: 'gambe', level: 'avanzato' },
+  // Aggiungi altri esercizi avanzati
+];
 
-// Sostituisci con il token del tuo bot
-const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o'; 
+module.exports = {
+  getRandomWorkout: function(bot, msg, muscle, category, level) {
+    const chatId = msg.chat.id;
 
-// Crea una nuova istanza del bot Telegram
-const bot = new TelegramBot(token, { polling: true });
+    // Filtra gli esercizi per la categoria, il muscolo e il livello specificato
+    const filteredWorkouts = workouts.filter(workout => 
+      workout.category === category && 
+      workout.muscle.toLowerCase() === muscle.toLowerCase() &&
+      workout.level === level
+    );
 
-// Risposta al comando /start
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "Benvenuto nel Coach di Fitness! Scegli un'opzione dal menu.");
-  sendMainMenu(msg.chat.id);
-});
+    // Controlla se ci sono esercizi disponibili per il muscolo e livello specificato
+    if (filteredWorkouts.length > 0) {
+      // Seleziona casualmente un esercizio dalla lista filtrata
+      const workout = filteredWorkouts[Math.floor(Math.random() * filteredWorkouts.length)];
 
-// Gestione dei pulsanti inline
-bot.on('callback_query', (callbackQuery) => {
-  const action = callbackQuery.data;
-  const chatId = callbackQuery.message.chat.id;
-  
-  switch (action) {
-    case 'workout':
-      bot.answerCallbackQuery(callbackQuery.id);
-      bot.sendMessage(chatId, "Ecco un allenamento casuale per te:");
-      workoutModule.getRandomWorkout(bot, { chat: { id: chatId } });
-      break;
-    case 'muscle':
-      bot.answerCallbackQuery(callbackQuery.id);
-      sendMuscleSelection(chatId);
-      break;
-    default:
-      // Se l'azione non corrisponde a nessun caso, potrebbe essere il muscolo selezionato
-      bot.answerCallbackQuery(callbackQuery.id);
-      workoutModule.getRandomWorkout(bot, { chat: { id: chatId } }, action);
-      break;
+      // Invia il messaggio con l'esercizio selezionato
+      bot.sendMessage(chatId, `Oggi ti consiglio di fare: ${workout.name}\nDescrizione: ${workout.description}\nVideo: ${workout.video}`);
+    } else {
+      // Se non ci sono esercizi disponibili per il muscolo e livello specificato, invia un messaggio di avviso
+      bot.sendMessage(chatId, `Non ci sono esercizi disponibili per allenare il muscolo "${muscle}" al livello "${level}".`);
+    }
+  },
+  getCategoryWorkout: function(bot, msg, category, level) {
+    const chatId = msg.chat.id;
+
+    // Filtra gli esercizi per la categoria e il livello specificato
+    const categoryWorkouts = workouts.filter(workout => workout.category === category && workout.level === level);
+
+    // Controlla se ci sono esercizi disponibili per la categoria e livello specificato
+    if (categoryWorkouts.length > 0) {
+      // Seleziona casualmente un esercizio dalla lista filtrata
+      const workout = categoryWorkouts[Math.floor(Math.random() * categoryWorkouts.length)];
+
+      // Invia il messaggio con l'esercizio selezionato
+      bot.sendMessage(chatId, `Oggi ti consiglio di fare: ${workout.name}\nDescrizione: ${workout.description}\nVideo: ${workout.video}`);
+    } else {
+      // Se non ci sono esercizi disponibili per la categoria e livello specificato, invia un messaggio di avviso
+      bot.sendMessage(chatId, `Non ci sono esercizi disponibili per la categoria "${category}" al livello "${level}".`);
+    }
   }
-});
-
-// Invia il menu principale
-function sendMainMenu(chatId) {
-  bot.sendMessage(chatId, "Scegli un'opzione:", {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: 'Allenamento Casuale', callback_data: 'workout' }],
-        [{ text: 'Allenamento per Muscolo', callback_data: 'muscle' }]
-        // Aggiungi altri pulsanti se necessario
-      ]
-    }
-  });
-}
-
-// Invia la selezione del muscolo
-function sendMuscleSelection(chatId) {
-  bot.sendMessage(chatId, "Scegli il muscolo che desideri allenare:", {
-    reply_markup: {
-      keyboard: [
-        [{ text: 'Pettorali' }, { text: 'Gambe' }],
-        [{ text: 'Addominali' }, { text: 'Schiena' }],
-        // Aggiungi altri muscoli se necessario
-        [{ text: 'Annulla' }] // Aggiungi un pulsante "Annulla" per tornare al menu principale
-      ],
-      resize_keyboard: true
-    }
-  });
-}
+};
