@@ -1,0 +1,66 @@
+// index.js
+const TelegramBot = require('node-telegram-bot-api');
+const workoutModule = require('./workout.js');
+
+// Sostituisci con il token del tuo bot
+const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o'; 
+
+// Crea una nuova istanza del bot Telegram
+const bot = new TelegramBot(token, { polling: true });
+
+// Risposta al comando /start
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, "Benvenuto nel Coach di Fitness! Scegli un'opzione dal menu.");
+  sendMainMenu(msg.chat.id);
+});
+
+// Gestione dei pulsanti inline
+bot.on('callback_query', (callbackQuery) => {
+  const action = callbackQuery.data;
+  const chatId = callbackQuery.message.chat.id;
+  
+  switch (action) {
+    case 'workout':
+      bot.answerCallbackQuery(callbackQuery.id);
+      bot.sendMessage(chatId, "Ecco un allenamento casuale per te:");
+      workoutModule.getRandomWorkout(bot, { chat: { id: chatId } });
+      break;
+    case 'muscle':
+      bot.answerCallbackQuery(callbackQuery.id);
+      sendMuscleSelection(chatId);
+      break;
+    default:
+      // Se l'azione non corrisponde a nessun caso, potrebbe essere il muscolo selezionato
+      bot.answerCallbackQuery(callbackQuery.id);
+      workoutModule.getRandomWorkout(bot, { chat: { id: chatId } }, action);
+      break;
+  }
+});
+
+// Invia il menu principale
+function sendMainMenu(chatId) {
+  bot.sendMessage(chatId, "Scegli un'opzione:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Allenamento Casuale', callback_data: 'workout' }],
+        [{ text: 'Allenamento per Muscolo', callback_data: 'muscle' }]
+        // Aggiungi altri pulsanti se necessario
+      ]
+    }
+  });
+}
+
+// Invia la selezione del muscolo
+function sendMuscleSelection(chatId) {
+  bot.sendMessage(chatId, "Scegli il muscolo che desideri allenare:", {
+    reply_markup: {
+      keyboard: [
+        [{ text: 'Pettorali' }, { text: 'Gambe' }],
+        [{ text: 'Addominali' }, { text: 'Schiena' }],
+        // Aggiungi altri muscoli se necessario
+        [{ text: 'Annulla' }] // Aggiungi un pulsante "Annulla" per tornare al menu principale
+      ],
+      resize_keyboard: true
+    }
+  });
+}
