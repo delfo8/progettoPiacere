@@ -42,11 +42,6 @@ bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
 
-  // Ignora i comandi
-  if (text.startsWith('/')) {
-    return;
-  }
-
   db.query('SELECT * FROM users WHERE chat_id = ?', [chatId], (err, results) => {
     if (err) {
       console.error('Errore durante la query:', err);
@@ -209,4 +204,3 @@ function sendMuscleSelection(chatId, level) {
     }
   });
 }
-
