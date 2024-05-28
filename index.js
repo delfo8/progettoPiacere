@@ -64,32 +64,45 @@ bot.on('message', (msg) => {
         bot.sendMessage(chatId, `Ciao ${text}! Quanti anni hai?`);
       });
     } else if (!user.age) {
-      db.query('UPDATE users SET age = ? WHERE chat_id = ?', [text, chatId], (err) => {
-        if (err) {
-          console.error('Errore durante l\'aggiornamento del database:', err);
-          return;
-        }
-        bot.sendMessage(chatId, `Perfetto! Hai ${text} anni. Quanto pesi (in kg)?`);
-      });
+      if (!isNaN(text)) {
+        db.query('UPDATE users SET age = ? WHERE chat_id = ?', [text, chatId], (err) => {
+          if (err) {
+            console.error('Errore durante l\'aggiornamento del database:', err);
+            return;
+          }
+          bot.sendMessage(chatId, `Perfetto! Hai ${text} anni. Quanto pesi (in kg)?`);
+        });
+      } else {
+        bot.sendMessage(chatId, "Inserisci un numero valido per l'età.");
+      }
     } else if (!user.weight) {
-      db.query('UPDATE users SET weight = ? WHERE chat_id = ?', [text, chatId], (err) => {
-        if (err) {
-          console.error('Errore durante l\'aggiornamento del database:', err);
-          return;
-        }
-        bot.sendMessage(chatId, `Ottimo! Pesi ${text} kg. Quanto sei alto (in cm)?`);
-      });
+      if (!isNaN(text)) {
+        db.query('UPDATE users SET weight = ? WHERE chat_id = ?', [text, chatId], (err) => {
+          if (err) {
+            console.error('Errore durante l\'aggiornamento del database:', err);
+            return;
+          }
+          bot.sendMessage(chatId, `Ottimo! Pesi ${text} kg. Quanto sei alto (in cm)?`);
+        });
+      } else {
+        bot.sendMessage(chatId, "Inserisci un numero valido per il peso.");
+      }
     } else if (!user.height) {
-      db.query('UPDATE users SET height = ?, bmi = ? WHERE chat_id = ?', [text, calculateBMI(user.weight, text), chatId], (err) => {
-        if (err) {
-          console.error('Errore durante l\'aggiornamento del database:', err);
-          return;
-        }
-        const bmi = calculateBMI(user.weight, text);
-        const advice = getAdvice(bmi);
-        bot.sendMessage(chatId, `Sei alto ${text} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);
-        askForGuidance(chatId);
-      });
+      if (!isNaN(text)) {
+        const height = parseFloat(text);
+        const bmi = calculateBMI(user.weight, height);
+        db.query('UPDATE users SET height = ?, bmi = ? WHERE chat_id = ?', [text, bmi, chatId], (err) => {
+          if (err) {
+            console.error('Errore durante l\'aggiornamento del database:', err);
+            return;
+          }
+          const advice = getAdvice(bmi);
+          bot.sendMessage(chatId, `Sei alto ${text} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);
+          askForGuidance(chatId);
+        });
+      } else {
+        bot.sendMessage(chatId, "Inserisci un numero valido per l'altezza.");
+      }
     }
   });
 });
@@ -190,7 +203,8 @@ bot.on('callback_query', (callbackQuery) => {
         return;
       }
       const bmi = results[0].bmi;
-      dietModule.getDietAdvice(bot, { chat: { id: chatId } }, bmi);
+      const dietAdvice = getDietAdvice(bmi);
+      bot.sendMessage(chatId, dietAdvice);
     });
   }
 });
@@ -210,3 +224,49 @@ function sendMuscleSelection(chatId, level) {
   });
 }
 
+// Funzione per fornire consigli dietetici basati sul BMI
+function getDietAdvice(bmi) {
+  let calories, protein, carbs, fats;
+
+  if (bmi < 18.5) {
+    calories = 2500;
+    protein = 150;
+    carbs = 300;
+    fats = 80;
+    return `Sei sotto peso. Ecco una dieta per aumentare la massa muscolare:
+Calorie: ${calories} kcal
+Proteine: ${protein} g
+Carboidrati: ${carbs} g
+Grassi: ${fats} g`;
+  } else if (bmi < 24.9) {
+    calories = 2000;
+    protein = 120;
+    carbs = 250;
+    fats = 70;
+    return `Hai un peso normale. Ecco una dieta equilibrata per mantenere il peso:
+Calorie: ${calories} kcal
+Proteine: ${protein} g
+Carboidrati: ${carbs} g
+Grassi: ${fats} g`;
+  } else if (bmi < 29.9) {
+    calories = 1800;
+    protein = 130;
+    carbs = 200;
+    fats = 60;
+    return `Sei in sovrappeso. Ecco una dieta per dimagrire:
+Calorie: ${calories} kcal
+Proteine: ${protein} g
+Carboidrati: ${carbs} g
+Grassi: ${fats} g`;
+  } else {
+    calories = 1500;
+    protein = 140;
+    carbs = 150;
+    fats = 50;
+    return `Sei obeso. Ecco una dieta per perdere peso:
+Calorie: ${calories} kcal
+Proteine: ${protein} g
+Carboidrati: ${carbs} g
+Grassi: ${fats} g`;
+  }
+}
