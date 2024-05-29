@@ -25,18 +25,36 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// Risposta al comando /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  db.query('INSERT INTO users (chat_id) VALUES (?) ON DUPLICATE KEY UPDATE chat_id = chat_id', [chatId], (err) => {
+  
+  // Prima di inserire un nuovo utente, elimina l'utente già presente nel database
+  db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
-      console.error('Errore durante l\'inserimento nel database:', err);
+      console.error('Errore durante l\'eliminazione dell\'utente dal database:', err);
       return;
     }
-    bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Qual è il tuo nome?");
+
+    // Una volta eliminato l'utente, inserisci il nuovo utente nel database
+    db.query('INSERT INTO users (chat_id) VALUES (?)', [chatId], (err) => {
+      if (err) {
+        console.error('Errore durante l\'inserimento nel database:', err);
+        return;
+      }
+      bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Qual è il tuo nome?");
+    });
   });
 });
-
+bot.onText(/\/logout/, (msg) => {
+  const chatId = msg.chat.id;
+  db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
+    if (err) {
+      console.error('Errore durante la cancellazione dall\'database:', err);
+      return;
+    }
+    bot.sendMessage(chatId, "✅ Hai eseguito il logout con successo. Se desideri utilizzare nuovamente il Coach di Fitness, puoi avviare una nuova sessione con il comando /start.");
+  });
+});
 // Risposta ai messaggi dell'utente
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
@@ -157,8 +175,8 @@ function sendMainMenu(chatId, level) {
   bot.sendMessage(chatId, "Scegli un'opzione:", {
     reply_markup: {
       inline_keyboard: [
-        [{ text: 'Allenamento Muscolare', callback_data: `category_muscle_${level}` }],
-        [{ text: 'Allenamento Dimagrimento/Cardio', callback_data: `category_cardio_${level}` }]
+        [{ text: '🏋️‍♂️ Allenamento Muscolare', callback_data: `category_muscle_${level}` }],
+        [{ text: '🏃‍♂️ Allenamento Dimagrimento/Cardio', callback_data: `category_cardio_${level}` }]
       ]
     }
   });
@@ -233,7 +251,7 @@ function getDietAdvice(bmi) {
     protein = 150;
     carbs = 300;
     fats = 80;
-    return `Sei sotto peso. Ecco una dieta per aumentare la massa muscolare:
+    return `Sei sotto peso. Ecco una dieta per aumentare la massa muscolare, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
@@ -243,7 +261,7 @@ Grassi: ${fats} g`;
     protein = 120;
     carbs = 250;
     fats = 70;
-    return `Hai un peso normale. Ecco una dieta equilibrata per mantenere il peso:
+    return `Hai un peso normale. Ecco una dieta equilibrata per mantenere il peso, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
@@ -253,7 +271,7 @@ Grassi: ${fats} g`;
     protein = 130;
     carbs = 200;
     fats = 60;
-    return `Sei in sovrappeso. Ecco una dieta per dimagrire:
+    return `Sei in sovrappeso. Ecco una dieta per dimagrire, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
@@ -263,7 +281,7 @@ Grassi: ${fats} g`;
     protein = 140;
     carbs = 150;
     fats = 50;
-    return `Sei obeso. Ecco una dieta per perdere peso:
+    return `Sei obeso. Ecco una dieta per perdere peso, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
