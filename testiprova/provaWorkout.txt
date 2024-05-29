@@ -55,11 +55,7 @@ module.exports = {
     // Controlla se il livello è valido per l'esercizio selezionato
     if (workout.levels[level]) {
       const selectedLevel = workout.levels[level];
-      const message = `*Oggi ti consiglio di fare:* **${workout.name}**\n\n` +
-                      `*Livello:* ${level}\n` +
-                      `*Descrizione:* ${selectedLevel.description}\n` +
-                      `[Guarda il video tutorial](${selectedLevel.video})`;
-      bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+      bot.sendMessage(chatId, `Oggi ti consiglio di fare: ${workout.name}\nLivello: ${level}\nDescrizione: ${selectedLevel.description}\nVideo: ${selectedLevel.video}`);
     } else {
       bot.sendMessage(chatId, `Non ci sono esercizi disponibili per il livello "${level}".`);
     }
@@ -75,11 +71,7 @@ module.exports = {
       // Controlla se il livello è valido per l'esercizio selezionato
       if (workout.levels[level]) {
         const selectedLevel = workout.levels[level];
-        const message = `*Esercizio per ${category} - Livello:* ${level}\n\n` +
-                        `*Oggi ti consiglio di fare:* **${workout.name}**\n` +
-                        `*Descrizione:* ${selectedLevel.description}\n` +
-                        `[Guarda il video tutorial](${selectedLevel.video})`;
-        bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        bot.sendMessage(chatId, `Esercizio per ${category} - Livello: ${level}\nOggi ti consiglio di fare: ${workout.name}\nDescrizione: ${selectedLevel.description}\nVideo: ${selectedLevel.video}`);
       } else {
         bot.sendMessage(chatId, `Non ci sono esercizi disponibili per il livello "${level}" nella categoria "${category}".`);
       }
