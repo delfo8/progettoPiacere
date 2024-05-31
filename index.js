@@ -6,6 +6,7 @@ const db = require('./db.js');
 const cron = require('node-cron');
 
 const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o';
+
 // Crea una nuova istanza del bot Telegram
 const bot = new TelegramBot(token, { polling: true });
 
