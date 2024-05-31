@@ -3,10 +3,9 @@ const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 const workoutModule = require('./workout.js');
 const db = require('./db.js');
-
+const cron = require('node-cron');
 
 const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o';
-
 // Crea una nuova istanza del bot Telegram
 const bot = new TelegramBot(token, { polling: true });
 
@@ -25,6 +24,7 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+// Gestione del comando /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
 
@@ -46,11 +46,12 @@ bot.onText(/\/start/, (msg) => {
   });
 });
 
+// Gestione del comando /logout
 bot.onText(/\/logout/, (msg) => {
   const chatId = msg.chat.id;
   db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
-      console.error('Errore durante la cancellazione dall\'database:', err);
+      console.error('Errore durante la cancellazione dal database:', err);
       bot.sendMessage(chatId, "Si è verificato un errore durante il logout. Riprova più tardi.");
       return;
     }
@@ -58,7 +59,7 @@ bot.onText(/\/logout/, (msg) => {
   });
 });
 
-// Risposta ai messaggi dell'utente
+// Gestione dei messaggi dell'utente
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
@@ -213,7 +214,7 @@ bot.on('callback_query', (callbackQuery) => {
     db.query('UPDATE users SET level = ? WHERE chat_id = ?', [level, chatId], (err) => {
       if (err) {
         console.error('Errore durante l\'aggiornamento del database:', err);
-        bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del livello. Riprova più tardi.");
+        bot.sendMessage(chatId, "Si è verificato un errore durante l'aggiornamento del livello di fitness. Riprova più tardi.");
         return;
       }
       bot.sendMessage(chatId, `Hai selezionato il livello: ${level}`);
@@ -240,12 +241,25 @@ bot.on('callback_query', (callbackQuery) => {
     db.query('SELECT bmi FROM users WHERE chat_id = ?', [chatId], (err, results) => {
       if (err) {
         console.error('Errore durante la query:', err);
-        bot.sendMessage(chatId, "Si è verificato un errore durante il recupero dei dati. Riprova più tardi.");
+        bot.sendMessage(chatId, "Si è verificato un errore durante il recupero del BMI. Riprova più tardi.");
         return;
       }
       const bmi = results[0].bmi;
       const dietAdvice = getDietAdvice(bmi);
       bot.sendMessage(chatId, dietAdvice);
+    });
+  } else if (action.startsWith('cancel_')) {
+    const level = action.split('_')[1];
+    bot.sendMessage(chatId, "Hai annullato l'operazione.");
+    sendMainMenu(chatId, level);
+  } else if (action === 'cancel_workout') {
+    db.query('DELETE FROM scheduled_workouts WHERE chat_id = ?', [chatId], (err) => {
+      if (err) {
+        console.error('Errore durante la cancellazione dell\'allenamento dal database:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante la cancellazione dell'allenamento. Riprova più tardi.");
+        return;
+      }
+      bot.sendMessage(chatId, "Hai cancellato tutti gli allenamenti pianificati.");
     });
   }
 });
@@ -274,44 +288,77 @@ function getDietAdvice(bmi) {
     protein = 150;
     carbs = 300;
     fats = 80;
-    return `Sei sotto peso. Ecco una dieta per aumentare la massa muscolare:
+    return `Sei sotto peso. Ecco una dieta per aumentare la massa muscolare, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g
-Premi /logout per uscire.`;
+Grassi: ${fats} g`;
   } else if (bmi < 24.9) {
     calories = 2000;
     protein = 120;
     carbs = 250;
     fats = 70;
-    return `Hai un peso normale. Ecco una dieta equilibrata per mantenere il peso:
+    return `Hai un peso normale. Ecco una dieta equilibrata per mantenere il peso, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g
-Premi /logout per uscire.`;
+Grassi: ${fats} g`;
   } else if (bmi < 29.9) {
     calories = 1800;
     protein = 130;
     carbs = 200;
     fats = 60;
-    return `Sei in sovrappeso. Ecco una dieta per dimagrire:
+    return `Sei in sovrappeso. Ecco una dieta per dimagrire, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g
-Premi /logout per uscire.`;
+Grassi: ${fats} g`;
   } else {
     calories = 1500;
     protein = 140;
     carbs = 150;
     fats = 50;
-    return `Sei obeso. Ecco una dieta per perdere peso:
+    return `Sei obeso. Ecco una dieta per perdere peso, premere /logout per uscire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g
-Premi /logout per uscire.`;
+Grassi: ${fats} g`;
   }
 }
+
+// Pianificazione delle notifiche giornaliere
+cron.schedule('0 9 * * *', () => {
+  db.query('SELECT chat_id FROM users', (err, results) => {
+    if (err) {
+      console.error('Errore durante il recupero degli utenti per le notifiche:', err);
+      return;
+    }
+
+    results.forEach((user) => {
+      bot.sendMessage(user.chat_id, "Buongiorno! Non dimenticare di fare il tuo allenamento oggi!");
+    });
+  });
+});
+
+// Pianificazione delle notifiche settimanali
+cron.schedule('0 9 * * MON', () => {
+  db.query('SELECT chat_id FROM users', (err, results) => {
+    if (err) {
+      console.error('Errore durante il recupero degli utenti per le notifiche:', err);
+      return;
+    }
+
+    results.forEach((user) => {
+      bot.sendMessage(user.chat_id, "Buon inizio settimana! Pianifica i tuoi allenamenti per questa settimana.");
+    });
+  });
+});
+
+// Gestione delle eccezioni globali
+process.on('uncaughtException', (err) => {
+  console.error('Unhandled Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});
