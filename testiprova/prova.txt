@@ -2,8 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 const workoutModule = require('./workout.js');
-
 const db = require('./db.js');
+const cron = require('node-cron');
 
 const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o';
 
@@ -25,42 +25,46 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+// Gestione del comando /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  
-  // Prima di inserire un nuovo utente, elimina l'utente già presente nel database
+
   db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
       console.error('Errore durante l\'eliminazione dell\'utente dal database:', err);
+      bot.sendMessage(chatId, "Si è verificato un errore durante il processo di registrazione. Riprova più tardi.");
       return;
     }
 
-    // Una volta eliminato l'utente, inserisci il nuovo utente nel database
     db.query('INSERT INTO users (chat_id) VALUES (?)', [chatId], (err) => {
       if (err) {
         console.error('Errore durante l\'inserimento nel database:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante il processo di registrazione. Riprova più tardi.");
         return;
       }
       bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Qual è il tuo nome?");
     });
   });
 });
+
+// Gestione del comando /logout
 bot.onText(/\/logout/, (msg) => {
   const chatId = msg.chat.id;
   db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
-      console.error('Errore durante la cancellazione dall\'database:', err);
+      console.error('Errore durante la cancellazione dal database:', err);
+      bot.sendMessage(chatId, "Si è verificato un errore durante il logout. Riprova più tardi.");
       return;
     }
     bot.sendMessage(chatId, "✅ Hai eseguito il logout con successo. Se desideri utilizzare nuovamente il Coach di Fitness, puoi avviare una nuova sessione con il comando /start.");
   });
 });
-// Risposta ai messaggi dell'utente
+
+// Gestione dei messaggi dell'utente
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
 
-  // Ignora i comandi
   if (text.startsWith('/')) {
     return;
   }
@@ -68,6 +72,7 @@ bot.on('message', (msg) => {
   db.query('SELECT * FROM users WHERE chat_id = ?', [chatId], (err, results) => {
     if (err) {
       console.error('Errore durante la query:', err);
+      bot.sendMessage(chatId, "Si è verificato un errore durante il recupero dei dati. Riprova più tardi.");
       return;
     }
 
@@ -77,6 +82,7 @@ bot.on('message', (msg) => {
       db.query('UPDATE users SET name = ? WHERE chat_id = ?', [text, chatId], (err) => {
         if (err) {
           console.error('Errore durante l\'aggiornamento del database:', err);
+          bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del nome. Riprova più tardi.");
           return;
         }
         bot.sendMessage(chatId, `Ciao ${text}! Quanti anni hai?`);
@@ -86,6 +92,7 @@ bot.on('message', (msg) => {
         db.query('UPDATE users SET age = ? WHERE chat_id = ?', [text, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
+            bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione dell'età. Riprova più tardi.");
             return;
           }
           bot.sendMessage(chatId, `Perfetto! Hai ${text} anni. Quanto pesi (in kg)?`);
@@ -98,6 +105,7 @@ bot.on('message', (msg) => {
         db.query('UPDATE users SET weight = ? WHERE chat_id = ?', [text, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
+            bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del peso. Riprova più tardi.");
             return;
           }
           bot.sendMessage(chatId, `Ottimo! Pesi ${text} kg. Quanto sei alto (in cm)?`);
@@ -112,10 +120,12 @@ bot.on('message', (msg) => {
         db.query('UPDATE users SET height = ?, bmi = ? WHERE chat_id = ?', [text, bmi, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
+            bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione dell'altezza. Riprova più tardi.");
             return;
           }
           const advice = getAdvice(bmi);
           bot.sendMessage(chatId, `Sei alto ${text} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);
+          sendUserDataTable(chatId, user.name, user.age, user.weight, text, bmi);
           askForGuidance(chatId);
         });
       } else {
@@ -143,6 +153,19 @@ function getAdvice(bmi) {
   } else {
     return "Sei obeso. Ti consigliamo di consultare un professionista della salute e seguire un programma per dimagrire.";
   }
+}
+
+// Funzione per inviare i dati dell'utente in una tabella ordinata
+function sendUserDataTable(chatId, name, age, weight, height, bmi) {
+  const table = `
+    <b>I tuoi dati:</b>
+    Nome: ${name}
+    Età: ${age}
+    Peso: ${weight} kg
+    Altezza: ${height} cm
+    BMI: ${bmi.toFixed(2)}
+  `;
+  bot.sendMessage(chatId, table, { parse_mode: 'HTML' });
 }
 
 // Funzione per chiedere il tipo di guida (allenamento o dieta)
@@ -192,6 +215,7 @@ bot.on('callback_query', (callbackQuery) => {
     db.query('UPDATE users SET level = ? WHERE chat_id = ?', [level, chatId], (err) => {
       if (err) {
         console.error('Errore durante l\'aggiornamento del database:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante l'aggiornamento del livello di fitness. Riprova più tardi.");
         return;
       }
       bot.sendMessage(chatId, `Hai selezionato il livello: ${level}`);
@@ -218,11 +242,25 @@ bot.on('callback_query', (callbackQuery) => {
     db.query('SELECT bmi FROM users WHERE chat_id = ?', [chatId], (err, results) => {
       if (err) {
         console.error('Errore durante la query:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante il recupero del BMI. Riprova più tardi.");
         return;
       }
       const bmi = results[0].bmi;
       const dietAdvice = getDietAdvice(bmi);
       bot.sendMessage(chatId, dietAdvice);
+    });
+  } else if (action.startsWith('cancel_')) {
+    const level = action.split('_')[1];
+    bot.sendMessage(chatId, "Hai annullato l'operazione.");
+    sendMainMenu(chatId, level);
+  } else if (action === 'cancel_workout') {
+    db.query('DELETE FROM scheduled_workouts WHERE chat_id = ?', [chatId], (err) => {
+      if (err) {
+        console.error('Errore durante la cancellazione dell\'allenamento dal database:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante la cancellazione dell'allenamento. Riprova più tardi.");
+        return;
+      }
+      bot.sendMessage(chatId, "Hai cancellato tutti gli allenamenti pianificati.");
     });
   }
 });
@@ -288,3 +326,54 @@ Carboidrati: ${carbs} g
 Grassi: ${fats} g`;
   }
 }
+
+// Pianificazione delle notifiche tra 5 minuti
+setTimeout(() => {
+  db.query('SELECT chat_id FROM users', (err, results) => {
+    if (err) {
+      console.error('Errore durante il recupero degli utenti per le notifiche:', err);
+      return;
+    }
+
+    results.forEach((user) => {
+      bot.sendMessage(user.chat_id, "Ricorda di fare il tuo allenamento oggi!");
+    });
+  });
+}, 1 * 60 * 1000); // 5 minuti in millisecondi
+
+// Pianificazione delle notifiche giornaliere
+cron.schedule('0 9 * * *', () => {
+  db.query('SELECT chat_id FROM users', (err, results) => {
+    if (err) {
+      console.error('Errore durante il recupero degli utenti per le notifiche:', err);
+      return;
+    }
+
+    results.forEach((user) => {
+      bot.sendMessage(user.chat_id, "Buongiorno! Non dimenticare di fare il tuo allenamento oggi!");
+    });
+  });
+});
+
+// Pianificazione delle notifiche settimanali
+cron.schedule('0 9 * * MON', () => {
+  db.query('SELECT chat_id FROM users', (err, results) => {
+    if (err) {
+      console.error('Errore durante il recupero degli utenti per le notifiche:', err);
+      return;
+    }
+
+    results.forEach((user) => {
+      bot.sendMessage(user.chat_id, "Buon inizio settimana! Pianifica i tuoi allenamenti per questa settimana.");
+    });
+  });
+});
+
+// Gestione delle eccezioni globali
+process.on('uncaughtException', (err) => {
+  console.error('Unhandled Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});

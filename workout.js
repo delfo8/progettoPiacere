@@ -44,6 +44,97 @@ const workouts = [
     },
     muscle: 'schiena'
   },
+  { 
+    name: 'Flessioni sulle parallele', 
+    levels: {
+      principiante: { description: '3 serie da 8 ripetizioni', video: 'https://www.youtube.com/watch?v=v44-R1l8ihc' },
+      intermedio: { description: '4 serie da 12 ripetizioni', video: 'https://www.youtube.com/watch?v=v44-R1l8ihc' },
+      avanzato: { description: '5 serie da 15 ripetizioni', video: 'https://www.youtube.com/watch?v=v44-R1l8ihc' }
+    },
+    muscle: 'pettorali'
+  },
+  { 
+    name: 'Affondi', 
+    levels: {
+      principiante: { description: '3 serie da 10 ripetizioni per gamba', video: 'https://www.youtube.com/watch?v=-RlPvqfUj9E' },
+      intermedio: { description: '4 serie da 12 ripetizioni per gamba', video: 'https://www.youtube.com/watch?v=-RlPvqfUj9E' },
+      avanzato: { description: '5 serie da 15 ripetizioni per gamba', video: 'https://www.youtube.com/watch?v=-RlPvqfUj9E' }
+    },
+    muscle: 'gambe'
+  },
+  { 
+    name: 'Crunch', 
+    levels: {
+      principiante: { description: '3 serie da 15 ripetizioni', video: 'https://www.youtube.com/watch?v=Xyd_fa5zoEU' },
+      intermedio: { description: '4 serie da 20 ripetizioni', video: 'https://www.youtube.com/watch?v=Xyd_fa5zoEU' },
+      avanzato: { description: '5 serie da 25 ripetizioni', video: 'https://www.youtube.com/watch?v=Xyd_fa5zoEU' }
+    },
+    muscle: 'addominali'
+  },
+  { 
+    name: 'Burpees', 
+    levels: {
+      principiante: { description: '3 serie da 5 ripetizioni', video: 'https://www.youtube.com/watch?v=JZQA08SlJnM' },
+      intermedio: { description: '4 serie da 8 ripetizioni', video: 'https://www.youtube.com/watch?v=JZQA08SlJnM' },
+      avanzato: { description: '5 serie da 10 ripetizioni', video: 'https://www.youtube.com/watch?v=JZQA08SlJnM' }
+    },
+    muscle: 'cardio'
+  },
+  { 
+    name: 'Trazioni alla sbarra', 
+    levels: {
+      principiante: { description: '3 serie da 5 ripetizioni', video: 'https://www.youtube.com/watch?v=bs_Ej32IYgo' },
+      intermedio: { description: '4 serie da 8 ripetizioni', video: 'https://www.youtube.com/watch?v=bs_Ej32IYgo' },
+      avanzato: { description: '5 serie da 10 ripetizioni', video: 'https://www.youtube.com/watch?v=bs_Ej32IYgo' }
+    },
+    muscle: 'schiena'
+  },
+  { 
+    name: 'Dips', 
+    levels: {
+      principiante: { description: '3 serie da 8 ripetizioni', video: 'https://www.youtube.com/watch?v=2z8JmcrW-As' },
+      intermedio: { description: '4 serie da 12 ripetizioni', video: 'https://www.youtube.com/watch?v=2z8JmcrW-As' },
+      avanzato: { description: '5 serie da 15 ripetizioni', video: 'https://www.youtube.com/watch?v=2z8JmcrW-As' }
+    },
+    muscle: 'tricipiti'
+  },
+  { 
+    name: 'Deadlift', 
+    levels: {
+      principiante: { description: '3 serie da 8 ripetizioni', video: 'https://www.youtube.com/watch?v=ytGaGIn3SjE' },
+      intermedio: { description: '4 serie da 10 ripetizioni', video: 'https://www.youtube.com/watch?v=ytGaGIn3SjE' },
+      avanzato: { description: '5 serie da 12 ripetizioni', video: 'https://www.youtube.com/watch?v=ytGaGIn3SjE' }
+    },
+    muscle: 'schiena e gambe'
+  },
+  { 
+    name: 'Mountain Climbers', 
+    levels: {
+      principiante: { description: '3 serie da 30 secondi', video: 'https://www.youtube.com/watch?v=nmwgirgXLYM' },
+      intermedio: { description: '4 serie da 45 secondi', video: 'https://www.youtube.com/watch?v=nmwgirgXLYM' },
+      avanzato: { description: '5 serie da 60 secondi', video: 'https://www.youtube.com/watch?v=nmwgirgXLYM' }
+    },
+    muscle: 'addominali e cardio'
+  },
+  { 
+    name: 'Leg Press', 
+    levels: {
+      principiante: { description: '3 serie da 12 ripetizioni', video: 'https://www.youtube.com/watch?v=Vk5jmfjdaLU' },
+      intermedio: { description: '4 serie da 15 ripetizioni', video: 'https://www.youtube.com/watch?v=Vk5jmfjdaLU' },
+      avanzato: { description: '5 serie da 20 ripetizioni', video: 'https://www.youtube.com/watch?v=Vk5jmfjdaLU' }
+    },
+    muscle: 'gambe'
+  },
+  { 
+    name: 'Russian Twist', 
+    levels: {
+      principiante: { description: '3 serie da 12 ripetizioni per lato', video: 'https://www.youtube.com/watch?v=JB2oyawG9KI' },
+      intermedio: { description: '4 serie da 15 ripetizioni per lato', video: 'https://www.youtube.com/watch?v=JB2oyawG9KI' },
+      avanzato: { description: '5 serie da 20 ripetizioni per lato', video: 'https://www.youtube.com/watch?v=JB2oyawG9KI' }
+    },
+    muscle: 'addominali'
+  }
+  
   
 ];
 
