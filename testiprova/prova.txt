@@ -25,15 +25,24 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// Risposta al comando /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  db.query('INSERT INTO users (chat_id) VALUES (?) ON DUPLICATE KEY UPDATE chat_id = chat_id', [chatId], (err) => {
+  
+  // Prima di inserire un nuovo utente, elimina l'utente già presente nel database
+  db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
-      console.error('Errore durante l\'inserimento nel database:', err);
+      console.error('Errore durante l\'eliminazione dell\'utente dal database:', err);
       return;
     }
-    bot.sendMessage(chatId, "🏋️‍♂️ Benvenuto nel Coach di Fitness! Premi /logout per uscire. Qual è il tuo nome?");
+
+    // Una volta eliminato l'utente, inserisci il nuovo utente nel database
+    db.query('INSERT INTO users (chat_id) VALUES (?)', [chatId], (err) => {
+      if (err) {
+        console.error('Errore durante l\'inserimento nel database:', err);
+        return;
+      }
+      bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Qual è il tuo nome?");
+    });
   });
 });
 bot.onText(/\/logout/, (msg) => {

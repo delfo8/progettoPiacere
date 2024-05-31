@@ -2,8 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const TelegramBot = require('node-telegram-bot-api');
 const workoutModule = require('./workout.js');
-
 const db = require('./db.js');
+
 
 const token = '7093419213:AAEN1dgtcnm5KEr25c9J_csWuLd1CsYRl_o';
 
@@ -27,40 +27,42 @@ app.listen(port, () => {
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  
-  // Prima di inserire un nuovo utente, elimina l'utente già presente nel database
+
   db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
       console.error('Errore durante l\'eliminazione dell\'utente dal database:', err);
+      bot.sendMessage(chatId, "Si è verificato un errore durante il processo di registrazione. Riprova più tardi.");
       return;
     }
 
-    // Una volta eliminato l'utente, inserisci il nuovo utente nel database
     db.query('INSERT INTO users (chat_id) VALUES (?)', [chatId], (err) => {
       if (err) {
         console.error('Errore durante l\'inserimento nel database:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante il processo di registrazione. Riprova più tardi.");
         return;
       }
       bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Qual è il tuo nome?");
     });
   });
 });
+
 bot.onText(/\/logout/, (msg) => {
   const chatId = msg.chat.id;
   db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
       console.error('Errore durante la cancellazione dall\'database:', err);
+      bot.sendMessage(chatId, "Si è verificato un errore durante il logout. Riprova più tardi.");
       return;
     }
     bot.sendMessage(chatId, "✅ Hai eseguito il logout con successo. Se desideri utilizzare nuovamente il Coach di Fitness, puoi avviare una nuova sessione con il comando /start.");
   });
 });
+
 // Risposta ai messaggi dell'utente
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
 
-  // Ignora i comandi
   if (text.startsWith('/')) {
     return;
   }
@@ -68,6 +70,7 @@ bot.on('message', (msg) => {
   db.query('SELECT * FROM users WHERE chat_id = ?', [chatId], (err, results) => {
     if (err) {
       console.error('Errore durante la query:', err);
+      bot.sendMessage(chatId, "Si è verificato un errore durante il recupero dei dati. Riprova più tardi.");
       return;
     }
 
@@ -77,6 +80,7 @@ bot.on('message', (msg) => {
       db.query('UPDATE users SET name = ? WHERE chat_id = ?', [text, chatId], (err) => {
         if (err) {
           console.error('Errore durante l\'aggiornamento del database:', err);
+          bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del nome. Riprova più tardi.");
           return;
         }
         bot.sendMessage(chatId, `Ciao ${text}! Quanti anni hai?`);
@@ -86,6 +90,7 @@ bot.on('message', (msg) => {
         db.query('UPDATE users SET age = ? WHERE chat_id = ?', [text, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
+            bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione dell'età. Riprova più tardi.");
             return;
           }
           bot.sendMessage(chatId, `Perfetto! Hai ${text} anni. Quanto pesi (in kg)?`);
@@ -98,6 +103,7 @@ bot.on('message', (msg) => {
         db.query('UPDATE users SET weight = ? WHERE chat_id = ?', [text, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
+            bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del peso. Riprova più tardi.");
             return;
           }
           bot.sendMessage(chatId, `Ottimo! Pesi ${text} kg. Quanto sei alto (in cm)?`);
@@ -112,10 +118,12 @@ bot.on('message', (msg) => {
         db.query('UPDATE users SET height = ?, bmi = ? WHERE chat_id = ?', [text, bmi, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
+            bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione dell'altezza. Riprova più tardi.");
             return;
           }
           const advice = getAdvice(bmi);
           bot.sendMessage(chatId, `Sei alto ${text} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);
+          sendUserDataTable(chatId, user.name, user.age, user.weight, text, bmi);
           askForGuidance(chatId);
         });
       } else {
@@ -143,6 +151,19 @@ function getAdvice(bmi) {
   } else {
     return "Sei obeso. Ti consigliamo di consultare un professionista della salute e seguire un programma per dimagrire.";
   }
+}
+
+// Funzione per inviare i dati dell'utente in una tabella ordinata
+function sendUserDataTable(chatId, name, age, weight, height, bmi) {
+  const table = `
+    <b>I tuoi dati:</b>
+    Nome: ${name}
+    Età: ${age}
+    Peso: ${weight} kg
+    Altezza: ${height} cm
+    BMI: ${bmi.toFixed(2)}
+  `;
+  bot.sendMessage(chatId, table, { parse_mode: 'HTML' });
 }
 
 // Funzione per chiedere il tipo di guida (allenamento o dieta)
@@ -192,6 +213,7 @@ bot.on('callback_query', (callbackQuery) => {
     db.query('UPDATE users SET level = ? WHERE chat_id = ?', [level, chatId], (err) => {
       if (err) {
         console.error('Errore durante l\'aggiornamento del database:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del livello. Riprova più tardi.");
         return;
       }
       bot.sendMessage(chatId, `Hai selezionato il livello: ${level}`);
@@ -218,6 +240,7 @@ bot.on('callback_query', (callbackQuery) => {
     db.query('SELECT bmi FROM users WHERE chat_id = ?', [chatId], (err, results) => {
       if (err) {
         console.error('Errore durante la query:', err);
+        bot.sendMessage(chatId, "Si è verificato un errore durante il recupero dei dati. Riprova più tardi.");
         return;
       }
       const bmi = results[0].bmi;
@@ -251,40 +274,44 @@ function getDietAdvice(bmi) {
     protein = 150;
     carbs = 300;
     fats = 80;
-    return `Sei sotto peso. Ecco una dieta per aumentare la massa muscolare, premere /logout per uscire:
+    return `Sei sotto peso. Ecco una dieta per aumentare la massa muscolare:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g`;
+Grassi: ${fats} g
+Premi /logout per uscire.`;
   } else if (bmi < 24.9) {
     calories = 2000;
     protein = 120;
     carbs = 250;
     fats = 70;
-    return `Hai un peso normale. Ecco una dieta equilibrata per mantenere il peso, premere /logout per uscire:
+    return `Hai un peso normale. Ecco una dieta equilibrata per mantenere il peso:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g`;
+Grassi: ${fats} g
+Premi /logout per uscire.`;
   } else if (bmi < 29.9) {
     calories = 1800;
     protein = 130;
     carbs = 200;
     fats = 60;
-    return `Sei in sovrappeso. Ecco una dieta per dimagrire, premere /logout per uscire:
+    return `Sei in sovrappeso. Ecco una dieta per dimagrire:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g`;
+Grassi: ${fats} g
+Premi /logout per uscire.`;
   } else {
     calories = 1500;
     protein = 140;
     carbs = 150;
     fats = 50;
-    return `Sei obeso. Ecco una dieta per perdere peso, premere /logout per uscire:
+    return `Sei obeso. Ecco una dieta per perdere peso:
 Calorie: ${calories} kcal
 Proteine: ${protein} g
 Carboidrati: ${carbs} g
-Grassi: ${fats} g`;
+Grassi: ${fats} g
+Premi /logout per uscire.`;
   }
 }
