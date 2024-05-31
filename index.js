@@ -327,6 +327,20 @@ Grassi: ${fats} g`;
   }
 }
 
+// Pianificazione delle notifiche tra 5 minuti
+setTimeout(() => {
+  db.query('SELECT chat_id FROM users', (err, results) => {
+    if (err) {
+      console.error('Errore durante il recupero degli utenti per le notifiche:', err);
+      return;
+    }
+
+    results.forEach((user) => {
+      bot.sendMessage(user.chat_id, "Ricorda di fare il tuo allenamento oggi!");
+    });
+  });
+}, 1 * 60 * 1000); // 5 minuti in millisecondi
+
 // Pianificazione delle notifiche giornaliere
 cron.schedule('0 9 * * *', () => {
   db.query('SELECT chat_id FROM users', (err, results) => {
