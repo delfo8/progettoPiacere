@@ -127,6 +127,7 @@ bot.on('message', (msg) => {
           bot.sendMessage(chatId, `Sei alto ${text} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);
           // Send the user data table
 sendUserDataTable(chatId, user.name, user.age, user.weight, text, bmi);
+askForMealPlanning(chatId);
 askForGuidance(chatId);
 });
 } else {
@@ -169,6 +170,7 @@ BMI: ${bmi.toFixed(2)}
 bot.sendMessage(chatId, table, { parse_mode: 'HTML' });
 }
 
+
 // Function to ask for guidance (workout or diet)
 function askForGuidance(chatId) {
 bot.sendMessage(chatId, "Cosa preferisci ricevere?", {
@@ -204,6 +206,70 @@ inline_keyboard: [
 ]
 }
 });
+}
+
+function personalizzaPasti(chatId) {
+    // Simuliamo una logica di personalizzazione dei pasti semplice
+    const obiettivi = ['Dimagrimento', 'Aumento massa muscolare', 'Mantenimento'];
+    const preferenzeAlimentari = ['Vegetariano', 'Vegano', 'Onnivoro'];
+    const restrizioniDietetiche = ['Intolleranza al glutine', 'Allergia alle arachidi', 'Nessuna'];
+
+    // Simuliamo la generazione di un piano pasti e una lista della spesa casuali
+    const pianoPasti = generateRandomMealPlan(obiettivi, preferenzeAlimentari, restrizioniDietetiche);
+    const listaSpesa = generateRandomShoppingList();
+
+    // Inviamo il piano pasti personalizzato e la lista della spesa all'utente
+    bot.sendMessage(chatId, "Ecco il tuo piano pasti personalizzato");
+    bot.sendMessage(chatId, pianoPasti);
+    
+}
+
+// Funzione per generare un piano pasti casuale
+function generateRandomMealPlan(obiettivi, preferenzeAlimentari, restrizioniDietetiche) {
+    // Simuliamo la creazione di un piano pasti casuale
+    const breakfast = ['Cereali integrali', 'Frutta fresca', 'Latte o yogurt', 'Uova strapazzate', 'Pane integrale con marmellata', 'Smoothie proteico'];
+    const lunch = ['Insalata mista', 'Pollo grigliato', 'Riso integrale', 'Salmone al limone', 'Pasta integrale con verdure', 'Tofu alla griglia'];
+    const dinner = ['Zuppa di verdure', 'Salmone al vapore', 'Quinoa', 'Pollo al curry con riso basmati', 'Pizza integrale con verdure', 'Taco vegetariani'];
+    
+    // Componiamo il piano pasti utilizzando alimenti casuali dalle categorie sopra
+    const pianoPasti = `
+    **Colazione:**
+    - ${randomItem(breakfast)}
+    - ${randomItem(breakfast)}
+    
+    **Pranzo:**
+    - ${randomItem(lunch)}
+    - ${randomItem(lunch)}
+    
+    **Cena:**
+    - ${randomItem(dinner)}
+    - ${randomItem(dinner)}
+    `;
+    
+    return pianoPasti;
+}
+
+// Funzione per generare una lista della spesa casuale
+function generateRandomShoppingList() {
+    // Simuliamo la creazione di una lista della spesa casuale
+    const shoppingItems = ['Frutta fresca', 'Verdure miste', 'Pollo', 'Salmone', 'Latte', 'Yogurt', 'Riso integrale', 'Quinoa', 'Cereali integrali', 'Pane integrale', 'Uova'];
+    
+    // Selezioniamo casualmente un numero di articoli per la lista della spesa
+    const numberOfItems = Math.floor(Math.random() * 6) + 5; // Da 5 a 10 articoli
+    
+    // Estraiamo casualmente gli articoli dalla lista e li mettiamo insieme in una stringa
+    let listaSpesa = '';
+    for (let i = 0; i < numberOfItems; i++) {
+        const item = randomItem(shoppingItems);
+        listaSpesa += `- ${item}\n`;
+    }
+    
+    return listaSpesa;
+}
+
+// Funzione per selezionare casualmente un elemento da un array
+function randomItem(array) {
+    return array[Math.floor(Math.random() * array.length)];
 }
 
 // Callback query handling
@@ -318,7 +384,38 @@ Carboidrati: ${carbs} g
 Grassi: ${fats} g`;
 }
 }
+function askForMealPlanning(chatId) {
+    bot.sendMessage(chatId, "Desideri pianificare i tuoi pasti e generare una lista della spesa in base ai tuoi obiettivi nutrizionali e preferenze alimentari?", {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Sì', callback_data: 'meal_planning_yes' }],
+                [{ text: 'No', callback_data: 'meal_planning_no' }]
+            ]
+        }
+    });
 
+  }
+  
+  // Gestione della risposta alla pianificazione dei pasti
+  bot.on('callback_query', (callbackQuery) => {
+    const action = callbackQuery.data;
+    const chatId = callbackQuery.message.chat.id;
+
+    if (action === 'meal_planning_yes') {
+        personalizzaPasti(chatId); // Richiamo della funzione per personalizzare i pasti
+    } else if (action === 'meal_planning_no') {
+        bot.sendMessage(chatId, "Va bene, se cambierai idea, puoi pianificare i pasti in qualsiasi momento.");
+    }
+});
+  
+  // Gestione degli errori globali
+  process.on('uncaughtException', (err) => {
+    console.error('Unhandled Exception:', err);
+  });
+  
+  process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+  });
 // Schedule notifications after 5 minutes
 setTimeout(() => {
 db.query('SELECT chat_id FROM users', (err, results) => {
