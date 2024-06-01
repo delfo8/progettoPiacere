@@ -27,38 +27,38 @@ const workouts = [
     muscle: 'addominali'
   },
   { 
-    name: 'Salti alla corda', 
+    name: 'Salti alla corda criminali', 
     levels: {
-      principiante: { description: '1 minuto', video: 'https://youtu.be/Is-7PPaBcsM?si=u8PieFkoMaCmfMMp' },
-      intermedio: { description: '1.5 minuti', video: 'https://youtu.be/Is-7PPaBcsM?si=u8PieFkoMaCmfMMp' },
-      avanzato: { description: '2 minuti', video: 'https://youtu.be/Is-7PPaBcsM?si=u8PieFkoMaCmfMMp' }
+      principiante: { description: '1 minuto', video: 'https://youtu.be/9u4frVBlgbc?si=BJYl8z2cCNp85ZHE' },
+      intermedio: { description: '1.5 minuti', video: 'https://youtu.be/9u4frVBlgbc?si=BJYl8z2cCNp85ZHE' },
+      avanzato: { description: '2 minuti', video: 'https://youtu.be/9u4frVBlgbc?si=BJYl8z2cCNp85ZHE' }
     },
     muscle: 'cardio'
   },
   { 
     name: 'Lat Machine', 
     levels: {
-      principiante: { description: '3 serie da 15 ripetizioni', video: 'https://youtu.be/NL6Lqd6nU-g?si=HpxGLnuYF6gEJN3N' },
-      intermedio: { description: '4 serie da 20 ripetizioni', video: 'https://youtu.be/NL6Lqd6nU-g?si=HpxGLnuYF6gEJN3N' },
-      avanzato: { description: '5 serie da 25 ripetizioni', video: 'https://youtu.be/NL6Lqd6nU-g?si=HpxGLnuYF6gEJN3N' }
+      principiante: { description: '3 serie da 15 ripetizioni', video: 'https://youtu.be/P8QKoy5sjv8?si=QEq_g1C5CBzxZSWa' },
+      intermedio: { description: '4 serie da 20 ripetizioni', video: 'https://youtu.be/P8QKoy5sjv8?si=QEq_g1C5CBzxZSWa' },
+      avanzato: { description: '5 serie da 25 ripetizioni', video: 'https://youtu.be/P8QKoy5sjv8?si=QEq_g1C5CBzxZSWa' }
     },
     muscle: 'schiena'
   },
   { 
     name: 'Flessioni sulle parallele', 
     levels: {
-      principiante: { description: '3 serie da 8 ripetizioni', video: 'https://www.youtube.com/watch?v=v44-R1l8ihc' },
-      intermedio: { description: '4 serie da 12 ripetizioni', video: 'https://www.youtube.com/watch?v=v44-R1l8ihc' },
-      avanzato: { description: '5 serie da 15 ripetizioni', video: 'https://www.youtube.com/watch?v=v44-R1l8ihc' }
+      principiante: { description: '3 serie da 8 ripetizioni', video: 'https://youtu.be/SLVwguvd6io?si=w-WrjMV6ZpExtJFl' },
+      intermedio: { description: '4 serie da 12 ripetizioni', video: 'https://youtu.be/SLVwguvd6io?si=w-WrjMV6ZpExtJFl' },
+      avanzato: { description: '5 serie da 15 ripetizioni', video: 'https://youtu.be/SLVwguvd6io?si=w-WrjMV6ZpExtJFl' }
     },
     muscle: 'pettorali'
   },
   { 
     name: 'Affondi', 
     levels: {
-      principiante: { description: '3 serie da 10 ripetizioni per gamba', video: 'https://www.youtube.com/watch?v=-RlPvqfUj9E' },
-      intermedio: { description: '4 serie da 12 ripetizioni per gamba', video: 'https://www.youtube.com/watch?v=-RlPvqfUj9E' },
-      avanzato: { description: '5 serie da 15 ripetizioni per gamba', video: 'https://www.youtube.com/watch?v=-RlPvqfUj9E' }
+      principiante: { description: '3 serie da 10 ripetizioni per gamba', video: 'https://youtu.be/zvaJ9MdWzdM?si=MLlcmpwstFrR4nxy' },
+      intermedio: { description: '4 serie da 12 ripetizioni per gamba', video: 'https://youtu.be/zvaJ9MdWzdM?si=MLlcmpwstFrR4nxy' },
+      avanzato: { description: '5 serie da 15 ripetizioni per gamba', video: 'https://youtu.be/zvaJ9MdWzdM?si=MLlcmpwstFrR4nxy' }
     },
     muscle: 'gambe'
   },

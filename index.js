@@ -28,7 +28,7 @@ app.listen(port, () => {
 // Gestione del comando /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-
+//quando entra un nuovo utente elimino quello presente nel database per visualizzare i dati di quello corrente
   db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
       console.error('Errore durante l\'eliminazione dell\'utente dal database:', err);
@@ -42,7 +42,7 @@ bot.onText(/\/start/, (msg) => {
         bot.sendMessage(chatId, "Si è verificato un errore durante il processo di registrazione. Riprova più tardi.");
         return;
       }
-      bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Qual è il tuo nome?");
+      bot.sendMessage(chatId, "Benvenuto nel Coach di Fitness! Qual è il tuo nome?"); //inserire nome
     });
   });
 });
@@ -50,6 +50,7 @@ bot.onText(/\/start/, (msg) => {
 // Gestione del comando /logout
 bot.onText(/\/logout/, (msg) => {
   const chatId = msg.chat.id;
+  //scrivendo /logout viene visualizzato messaggio di logout e viene eliminato l'utente dal database
   db.query('DELETE FROM users WHERE chat_id = ?', [chatId], (err) => {
     if (err) {
       console.error('Errore durante la cancellazione dal database:', err);
@@ -85,30 +86,32 @@ bot.on('message', (msg) => {
           bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del nome. Riprova più tardi.");
           return;
         }
-        bot.sendMessage(chatId, `Ciao ${text}! Quanti anni hai?`);
+        bot.sendMessage(chatId, `Ciao ${text}! Quanti anni hai?`);//inserire anni
       });
     } else if (!user.age) {
       if (!isNaN(text)) {
+        //inserimento anni nella tabella age
         db.query('UPDATE users SET age = ? WHERE chat_id = ?', [text, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
             bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione dell'età. Riprova più tardi.");
             return;
           }
-          bot.sendMessage(chatId, `Perfetto! Hai ${text} anni. Quanto pesi (in kg)?`);
+          bot.sendMessage(chatId, `Perfetto! Hai ${text} anni. Quanto pesi (in kg)?`);//inserire peso
         });
       } else {
-        bot.sendMessage(chatId, "Inserisci un numero valido per l'età.");
+        bot.sendMessage(chatId, "Inserisci un numero valido per l'età.");//se viene inserito una lettera
       }
     } else if (!user.weight) {
       if (!isNaN(text)) {
+        //aggiorno peso
         db.query('UPDATE users SET weight = ? WHERE chat_id = ?', [text, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
             bot.sendMessage(chatId, "Si è verificato un errore durante la registrazione del peso. Riprova più tardi.");
             return;
           }
-          bot.sendMessage(chatId, `Ottimo! Pesi ${text} kg. Quanto sei alto (in cm)?`);
+          bot.sendMessage(chatId, `Ottimo! Pesi ${text} kg. Quanto sei alto (in cm)?`);//inserire altezza
         });
       } else {
         bot.sendMessage(chatId, "Inserisci un numero valido per il peso.");
@@ -117,6 +120,7 @@ bot.on('message', (msg) => {
       if (!isNaN(text)) {
         const height = parseFloat(text);
         const bmi = calculateBMI(user.weight, height);
+        //inserisco altezza nella tabella height nel database 
         db.query('UPDATE users SET height = ?, bmi = ? WHERE chat_id = ?', [text, bmi, chatId], (err) => {
           if (err) {
             console.error('Errore durante l\'aggiornamento del database:', err);
@@ -124,16 +128,19 @@ bot.on('message', (msg) => {
             return;
           }
           const advice = getAdvice(bmi);
-          bot.sendMessage(chatId, `Sei alto ${text} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);
+          bot.sendMessage(chatId, `Sei alto ${text} cm. Il tuo BMI è ${bmi.toFixed(2)}. ${advice}`);//visualizzazione indice BMI
           sendUserDataTable(chatId, user.name, user.age, user.weight, text, bmi);
           askForGuidance(chatId);
         });
       } else {
-        bot.sendMessage(chatId, "Inserisci un numero valido per l'altezza.");
+        bot.sendMessage(chatId, "Inserisci un numero valido per l'altezza.");//se lettere
       }
+    
     }
   });
 });
+
+    
 
 // Funzione per calcolare il BMI
 function calculateBMI(weight, height) {
@@ -205,62 +212,64 @@ function sendMainMenu(chatId, level) {
   });
 }
 
-// Gestione dei pulsanti inline
+// Funzione principale che gestisce le callback_query
+// Funzione principale che gestisce le callback_query
 bot.on('callback_query', (callbackQuery) => {
-  const action = callbackQuery.data;
-  const chatId = callbackQuery.message.chat.id;
+  const action = callbackQuery.data; // Ottiene il dato callback (azione)
+  const chatId = callbackQuery.message.chat.id; // Ottiene l'ID della chat da cui proviene la callback
 
-  if (action.startsWith('level_')) {
-    const level = action.split('_')[1];
-    db.query('UPDATE users SET level = ? WHERE chat_id = ?', [level, chatId], (err) => {
-      if (err) {
+  if (action.startsWith('level_')) { // Verifica se l'azione inizia con 'level_'
+    const level = action.split('_')[1]; // Estrae il livello dall'azione
+    db.query('UPDATE users SET level = ? WHERE chat_id = ?', [level, chatId], (err) => { // Aggiorna il livello dell'utente nel database
+      if (err) { // Gestione errore durante l'aggiornamento del database
         console.error('Errore durante l\'aggiornamento del database:', err);
         bot.sendMessage(chatId, "Si è verificato un errore durante l'aggiornamento del livello di fitness. Riprova più tardi.");
         return;
       }
-      bot.sendMessage(chatId, `Hai selezionato il livello: ${level}`);
-      sendMainMenu(chatId, level);
+      bot.sendMessage(chatId, `Hai selezionato il livello: ${level}`); // Conferma il livello selezionato
+      sendMainMenu(chatId, level); // Invia il menu principale aggiornato
     });
-  } else if (action.startsWith('category_')) {
+  } else if (action.startsWith('category_')) { // Verifica se l'azione inizia con 'category_'
     const parts = action.split('_');
-    const category = parts[1];
-    const level = parts[2];
+    const category = parts[1]; // Estrae la categoria dall'azione
+    const level = parts[2]; // Estrae il livello dall'azione
 
-    if (category === 'muscle') {
-      sendMuscleSelection(chatId, level);
-    } else if (category === 'cardio') {
-      workoutModule.getCategoryWorkout(bot, { chat: { id: chatId } }, 'cardio', level);
+    if (category === 'muscle') { // Se la categoria è 'muscle'
+      sendMuscleSelection(chatId, level); // Invia la selezione del muscolo
+      
+    } else if (category === 'cardio') { // Se la categoria è 'cardio'
+      workoutModule.getCategoryWorkout(bot, { chat: { id: chatId } }, 'cardio', level); // Ottiene e invia l'allenamento per il cardio
     }
-  } else if (action.startsWith('muscle_')) {
+  } else if (action.startsWith('muscle_')) { // Verifica se l'azione inizia con 'muscle_'
     const parts = action.split('_');
-    const muscle = parts[1];
-    const level = parts[2];
-    workoutModule.getCategoryWorkout(bot, { chat: { id: chatId } }, muscle, level);
-  } else if (action === 'guidance_workout') {
-    askForLevel(chatId);
-  } else if (action === 'guidance_diet') {
-    db.query('SELECT bmi FROM users WHERE chat_id = ?', [chatId], (err, results) => {
-      if (err) {
+    const muscle = parts[1]; // Estrae il muscolo dall'azione
+    const level = parts[2]; // Estrae il livello dall'azione
+    workoutModule.getCategoryWorkout(bot, { chat: { id: chatId } }, muscle, level); // Ottiene e invia l'allenamento per il muscolo selezionato
+  } else if (action === 'guidance_workout') { // Verifica se l'azione è 'guidance_workout'
+    askForLevel(chatId); // Chiede il livello all'utente
+  } else if (action === 'guidance_diet') { // Verifica se l'azione è 'guidance_diet'
+    db.query('SELECT bmi FROM users WHERE chat_id = ?', [chatId], (err, results) => { // Recupera il BMI dell'utente dal database
+      if (err) { // Gestione errore durante il recupero del BMI
         console.error('Errore durante la query:', err);
         bot.sendMessage(chatId, "Si è verificato un errore durante il recupero del BMI. Riprova più tardi.");
         return;
       }
-      const bmi = results[0].bmi;
-      const dietAdvice = getDietAdvice(bmi);
-      bot.sendMessage(chatId, dietAdvice);
+      const bmi = results[0].bmi; // Estrae il BMI dai risultati
+      const dietAdvice = getDietAdvice(bmi); // Ottiene i consigli dietetici basati sul BMI
+      bot.sendMessage(chatId, dietAdvice); // Invia i consigli dietetici all'utente
     });
-  } else if (action.startsWith('cancel_')) {
-    const level = action.split('_')[1];
-    bot.sendMessage(chatId, "Hai annullato l'operazione.");
-    sendMainMenu(chatId, level);
-  } else if (action === 'cancel_workout') {
-    db.query('DELETE FROM scheduled_workouts WHERE chat_id = ?', [chatId], (err) => {
-      if (err) {
+  } else if (action.startsWith('cancel_')) { // Verifica se l'azione inizia con 'cancel_'
+    const level = action.split('_')[1]; // Estrae il livello dall'azione
+    bot.sendMessage(chatId, "Hai annullato l'operazione."); // Informa l'utente che l'operazione è stata annullata
+    sendMainMenu(chatId, level); // Invia il menu principale aggiornato
+  } else if (action === 'cancel_workout') { // Verifica se l'azione è 'cancel_workout'
+    db.query('DELETE FROM scheduled_workouts WHERE chat_id = ?', [chatId], (err) => { // Cancella tutti gli allenamenti pianificati dal database
+      if (err) { // Gestione errore durante la cancellazione degli allenamenti
         console.error('Errore durante la cancellazione dell\'allenamento dal database:', err);
         bot.sendMessage(chatId, "Si è verificato un errore durante la cancellazione dell'allenamento. Riprova più tardi.");
         return;
       }
-      bot.sendMessage(chatId, "Hai cancellato tutti gli allenamenti pianificati.");
+      bot.sendMessage(chatId, "Hai cancellato tutti gli allenamenti pianificati."); // Conferma la cancellazione degli allenamenti
     });
   }
 });
@@ -268,7 +277,7 @@ bot.on('callback_query', (callbackQuery) => {
 // Funzione per inviare la selezione del muscolo
 function sendMuscleSelection(chatId, level) {
   bot.sendMessage(chatId, "Scegli il muscolo che desideri allenare:", {
-    reply_markup: {
+    reply_markup: { // Crea i pulsanti inline per la selezione del muscolo
       inline_keyboard: [
         [{ text: 'Pettorali', callback_data: `muscle_pettorali_${level}` }],
         [{ text: 'Gambe', callback_data: `muscle_gambe_${level}` }],
@@ -279,6 +288,25 @@ function sendMuscleSelection(chatId, level) {
     }
   });
 }
+
+
+// Funzione per inviare la selezione del muscolo
+function sendMuscleSelection(chatId, level) {
+  bot.sendMessage(chatId, "Scegli il muscolo che desideri allenare:", {
+    reply_markup: { // Crea i pulsanti inline per la selezione del muscolo
+      inline_keyboard: [
+        [{ text: 'Pettorali', callback_data: `muscle_pettorali_${level}` }],
+        [{ text: 'Gambe', callback_data: `muscle_gambe_${level}` }],
+        [{ text: 'Addominali', callback_data: `muscle_addominali_${level}` }],
+        [{ text: 'Schiena', callback_data: `muscle_schiena_${level}` }],
+        [{ text: 'Annulla', callback_data: `cancel_${level}` }]
+      ]
+    }
+  });
+
+}
+
+
 
 // Funzione per fornire consigli dietetici basati sul BMI
 function getDietAdvice(bmi) {
